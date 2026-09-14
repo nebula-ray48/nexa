@@ -1,0 +1,12 @@
+id = "nexa"
+name = "Nexa"
+version = "0.0.1"
+schema_version = 1
+authors = ["Nexa Dev"]
+description = "Syntax highlighting for Nexa language."
+repository = "https://github.com/nebula-ray48/nexa"
+
+[grammars.nexa]
+repository = "https://github.com/nebula-ray48/nexa"
+rev = "main"
+path = "tree-sitter-nexa"
