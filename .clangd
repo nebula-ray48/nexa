@@ -1,0 +1,9 @@
+# Clangd Configuration
+
+Diagnostics:
+  Suppress:
+    - missing-field-initializers
+    - -Wmissing-field-initializers
+
+CompileFlags:
+  CompilationDatabase: cmake-build-debug

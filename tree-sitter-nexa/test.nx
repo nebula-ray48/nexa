@@ -1,0 +1,1 @@
+pub fun update_monsters() { val hp: i32 = 100; }
