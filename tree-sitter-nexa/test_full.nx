@@ -7,7 +7,7 @@ pub fun update_monsters(delta_time: f32) {
     forEach Monster where is_active {
         Position.x = Position.x + 1.0;
         val is_low_hp = hp < 20 and not hp <= 0;
-        
+
         if is_low_hp {
             hp = 100;
         }
