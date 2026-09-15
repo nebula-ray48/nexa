@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.24)
+project(Nexa LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+include(FetchContent)
+FetchContent_Declare(
+    tree-sitter
+    GIT_REPOSITORY https://github.com/tree-sitter/tree-sitter.git
+    GIT_TAG v0.22.6
+)
+FetchContent_MakeAvailable(tree-sitter)
+
+add_subdirectory(core)
+add_subdirectory(cli)
+# TODO lsp と stdlib は実装時に追加する

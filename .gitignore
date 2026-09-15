@@ -1,3 +1,11 @@
+# IDE integrations
+/.idea/
+/.vs/
+/.vscode/
+/.zed/
+*.swp
+*.swo
+
 # Node / Tree-sitter
 tree-sitter-nexa/node_modules/
 tree-sitter-nexa/build/
@@ -5,5 +13,5 @@ package-lock.json
 
 # CMake / C++ Build
 **/build/
-**/cmake-build-*/
+/cmake-build-*/
 .DS_Store
