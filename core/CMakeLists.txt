@@ -10,3 +10,5 @@ target_include_directories(nexa-core PUBLIC
     include
     ${tree-sitter_SOURCE_DIR}/lib/include
 )
+
+set_nexa_warnings(nexa-core)
