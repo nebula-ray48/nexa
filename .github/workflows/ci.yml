@@ -30,10 +30,10 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: workflows/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Cache CMake dependencies
-        uses: workflows/cache@v3
+        uses: actions/cache@v3
         with:
           path: build/_deps
           key: ${{ runner.os }}-cmake-deps-${{ hashFiles('**/CMakeLists.txt') }}
@@ -49,7 +49,7 @@ jobs:
         run: ctest -C Release --output-on-failure
 
       - name: Upload Artifacts
-        uses: workflows/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: Nexa-Build-${{ matrix.name }}
           path: |
