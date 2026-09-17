@@ -29,6 +29,13 @@ public:
         string_to_id[id_to_string.back()] = new_id;
         return new_id;
     }
+
+    std::string_view GetString(StringID id) {
+        if (id < id_to_string.size()) {
+            return id_to_string[id];
+        }
+        return "<unknown>";
+    }
 };
 
 struct VariableRegistry_DOD {
@@ -114,6 +121,19 @@ void parse_test_code() {
     VariableRegistry_DOD registry;
 
     AnalyzeAST(root_node, source_code, interner, registry, symbols);
+
+    std::cout << "\n--- Memory Verification ---\n";
+
+    if (!registry.names.empty()) {
+        std::cout << "Restored Name  (ID " << registry.names[0] << "): "
+                  << interner.GetString(registry.names[0]) << "\n";
+
+        std::cout << "Restored Type  (ID " << registry.types[0] << "): "
+                  << interner.GetString(registry.types[0]) << "\n";
+
+        std::cout << "Restored Value (ID " << registry.initial_values[0] << "): "
+                  << interner.GetString(registry.initial_values[0]) << "\n";
+    }
 
     ts_tree_delete(tree);
     ts_parser_delete(parser);
