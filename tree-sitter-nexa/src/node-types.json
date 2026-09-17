@@ -824,7 +824,7 @@
     "named": false
   },
   {
-    "type": "boolean",
+    "type": "bool",
     "named": false
   },
   {
@@ -840,11 +840,11 @@
     "named": false
   },
   {
-    "type": "f32",
+    "type": "float32",
     "named": false
   },
   {
-    "type": "f64",
+    "type": "float64",
     "named": false
   },
   {
@@ -856,27 +856,27 @@
     "named": false
   },
   {
-    "type": "i16",
-    "named": false
-  },
-  {
-    "type": "i32",
-    "named": false
-  },
-  {
-    "type": "i64",
-    "named": false
-  },
-  {
-    "type": "i8",
-    "named": false
-  },
-  {
     "type": "identifier",
     "named": true
   },
   {
     "type": "if",
+    "named": false
+  },
+  {
+    "type": "int16",
+    "named": false
+  },
+  {
+    "type": "int32",
+    "named": false
+  },
+  {
+    "type": "int64",
+    "named": false
+  },
+  {
+    "type": "int8",
     "named": false
   },
   {
@@ -912,19 +912,19 @@
     "named": true
   },
   {
-    "type": "u16",
+    "type": "uint16",
     "named": false
   },
   {
-    "type": "u32",
+    "type": "uint32",
     "named": false
   },
   {
-    "type": "u64",
+    "type": "uint64",
     "named": false
   },
   {
-    "type": "u8",
+    "type": "uint8",
     "named": false
   },
   {

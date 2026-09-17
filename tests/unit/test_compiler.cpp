@@ -31,14 +31,14 @@ TEST(AnalyzerTest, ParseVariable) {
     VariableRegistry_DOD var_reg;
     ComponentRegistry_DOD comp_reg;
 
-    ParseAndAnalyze("val hp: i32 = 100;", interner, var_reg, comp_reg);
+    ParseAndAnalyze("val hp: int32 = 100;", interner, var_reg, comp_reg);
 
     // 抽出された変数が1つだけであることを保証
     ASSERT_EQ(var_reg.names.size(), 1);
 
     // 名前、型、初期値が正しくDODメモリに格納されていることを検証
     EXPECT_EQ(interner.GetString(var_reg.names[0]), "hp");
-    EXPECT_EQ(interner.GetString(var_reg.types[0]), "i32");
+    EXPECT_EQ(interner.GetString(var_reg.types[0]), "int32");
     EXPECT_EQ(interner.GetString(var_reg.initial_values[0]), "100");
 }
 
@@ -48,7 +48,7 @@ TEST(AnalyzerTest, ParseComponent) {
     VariableRegistry_DOD var_reg;
     ComponentRegistry_DOD comp_reg;
 
-    ParseAndAnalyze("component Position { x: f32, y: f32 }", interner, var_reg, comp_reg);
+    ParseAndAnalyze("component Position { x: float32, y: float32 }", interner, var_reg, comp_reg);
 
     // 抽出されたコンポーネントが1つであることを保証
     ASSERT_EQ(comp_reg.names.size(), 1);
@@ -61,8 +61,8 @@ TEST(AnalyzerTest, ParseComponent) {
     uint32_t start = comp_reg.field_starts[0];
 
     EXPECT_EQ(interner.GetString(comp_reg.field_names[start + 0]), "x");
-    EXPECT_EQ(interner.GetString(comp_reg.field_types[start + 0]), "f32");
+    EXPECT_EQ(interner.GetString(comp_reg.field_types[start + 0]), "float32");
 
     EXPECT_EQ(interner.GetString(comp_reg.field_names[start + 1]), "y");
-    EXPECT_EQ(interner.GetString(comp_reg.field_types[start + 1]), "f32");
+    EXPECT_EQ(interner.GetString(comp_reg.field_types[start + 1]), "float32");
 }

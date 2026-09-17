@@ -1,6 +1,6 @@
 component Position {
-    x: f32,
-    y: f32,
+    x: float32,
+    y: float32,
 }
 
 pub fun update_monsters(delta_time: f32) {

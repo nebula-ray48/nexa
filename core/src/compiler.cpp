@@ -86,7 +86,7 @@ void parse_test_code() {
     TSParser* parser = ts_parser_new();
     ts_parser_set_language(parser, tree_sitter_nexa());
 
-    std::string source_code = "val hp: i32 = 100; component Position { x: f32, y: f32 }";
+    std::string source_code = "val hp: int32 = 100; component Position { x: float32, y: float32 }";
 
     TSTree* tree = ts_parser_parse_string(
         parser,
@@ -105,8 +105,6 @@ void parse_test_code() {
     ComponentRegistry_DOD comp_registry;
 
     AnalyzeAST(root_node, source_code, interner, registry, comp_registry, symbols);
-
-    // テストコード移行に向け、std::coutで確認する処理は一旦削除してスッキリさせました
 
     ts_tree_delete(tree);
     ts_parser_delete(parser);

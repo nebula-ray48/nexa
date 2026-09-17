@@ -1,1 +1,1 @@
-pub fun update_monsters() { val hp: i32 = 100; }
+pub fun update_monsters() { val hp: int32 = 100; }
