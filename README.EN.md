@@ -3,6 +3,7 @@
 ---
 
 ## English
+## [Japanese Version](README.JP.md)
 
 ### What is Nexa?
 
