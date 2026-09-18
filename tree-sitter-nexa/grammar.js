@@ -35,7 +35,7 @@ module.exports = grammar({
     // --- 関数とロジック ---
     function_declaration: $ => seq(
       optional('pub'), 'fun', field('name', $.identifier),
-      '(', optional($.parameter_list), ')',
+        '(', field('parameters', optional($.parameter_list)), ')',
       optional(seq('->', field('return_type', $._type_expression))),
       field('body', $.block)
     ),
