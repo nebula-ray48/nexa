@@ -24,6 +24,7 @@ private:
     void analyze_parameters(TSNode params_node, FunctionInfo& current_func);
     void analyze_if(TSNode if_node, FunctionInfo& current_func);
     void analyze_while(TSNode while_node, FunctionInfo& current_func);
+    void analyze_variable(TSNode var_node, FunctionInfo& current_func);
 };
 
 }  // namespace nexa

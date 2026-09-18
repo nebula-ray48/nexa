@@ -74,8 +74,31 @@ void Analyzer::analyze_block(TSNode block_node, FunctionInfo& current_func) {
             analyze_if(statement, current_func);
         } else if (type == "while_statement") {
             analyze_while(statement, current_func);
+        } else if (type == "variable_declaration") {
+            analyze_variable(statement, current_func);
         }
     }
+}
+
+void Analyzer::analyze_variable(TSNode var_node, FunctionInfo& current_func) {
+    VariableInfo info;
+
+    TSNode kind_node = ts_node_child(var_node, 0);
+    info.is_mutable = (ts_node_type(kind_node) == std::string_view("var"));
+
+    TSNode name_node = ts_node_child_by_field_name(var_node, "name", 4);
+    info.name_id = get_node_string_id(name_node);
+
+    TSNode type_node = ts_node_child_by_field_name(var_node, "type", 4);
+    if (!ts_node_is_null(type_node)) {
+        info.type_id = get_node_string_id(type_node);
+    } else {
+        info.type_id = kInvalidStringID;
+    }
+    
+    info.value_node = ts_node_child_by_field_name(var_node, "value", 5);
+
+    current_func.variables.push_back(std::move(info));
 }
 
 void Analyzer::analyze_if(TSNode if_node, FunctionInfo& current_func) {

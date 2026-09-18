@@ -260,3 +260,47 @@ TEST(AnalyzerTest, ExtractWhileStatement) {
     ts_tree_delete(tree);
     ts_parser_delete(parser);
 }
+
+TEST(AnalyzerTest, ExtractVariableDeclaration) {
+    const char* source = R"(
+        pub fun setup_player() {
+            val max_health: float32 = 100.0;
+            var current_state = 1;
+        }
+    )";
+
+    nexa::StringInterner interner;
+    TSParser* parser = ts_parser_new();
+    ts_parser_set_language(parser, tree_sitter_nexa());
+
+    TSTree* tree = ts_parser_parse_string(parser, nullptr, source, static_cast<uint32_t>(strlen(source)));
+    TSNode root_node = ts_tree_root_node(tree);
+
+    nexa::Analyzer analyzer(source, interner);
+    analyzer.analyze_root(root_node);
+
+    const auto& functions = analyzer.get_functions();
+    ASSERT_EQ(functions.size(), 1);
+    const auto& func = functions[0];
+
+    // 変数が2つ抽出できているか
+    ASSERT_EQ(func.variables.size(), 2);
+
+    // 1つ目: val max_health: float32 = 100.0;
+    const auto& var1 = func.variables[0];
+    EXPECT_EQ(interner.GetString(var1.name_id), "max_health");
+    EXPECT_TRUE(var1.has_explicit_type());
+    EXPECT_EQ(interner.GetString(var1.type_id), "float32");
+    EXPECT_FALSE(var1.is_mutable);
+    EXPECT_FALSE(ts_node_is_null(var1.value_node));
+
+    // 2つ目: var current_state = 1;
+    const auto& var2 = func.variables[1];
+    EXPECT_EQ(interner.GetString(var2.name_id), "current_state");
+    EXPECT_FALSE(var2.has_explicit_type()); // 型指定がない
+    EXPECT_TRUE(var2.is_mutable);
+    EXPECT_FALSE(ts_node_is_null(var2.value_node));
+
+    ts_tree_delete(tree);
+    ts_parser_delete(parser);
+}
