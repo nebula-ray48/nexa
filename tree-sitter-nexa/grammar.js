@@ -109,12 +109,13 @@ module.exports = grammar({
     unary_expression: $ => prec('not', seq('not', $._expression)),
 
     // --- 組み込み型と識別子の厳格化 ---
-    primitive_type: $ => choice(
-      'i8', 'i16', 'i32', 'i64',
-      'u8', 'u16', 'u32', 'u64',
-      'f32', 'f64',
-      'boolean', 'string'
-    ),
+      primitive_type: $ => choice(
+          'int8', 'int16', 'int32', 'int64',
+          'uint8', 'uint16', 'uint32', 'uint64',
+          'float32', 'float64',
+          'bool',
+          'string'
+      ),
 
     _type: $ => choice($.primitive_type, $.type_identifier),
 

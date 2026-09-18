@@ -1,0 +1,60 @@
+name: CI & Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux-x64
+            os: ubuntu-latest
+            cmake_args: ""
+          - name: macOS-Latest
+            os: macos-latest
+            cmake_args: ""
+          - name: Windows-x64
+            os: windows-latest
+            cmake_args: "-A x64"
+          - name: Windows-x86
+            os: windows-latest
+            cmake_args: "-A Win32"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Cache CMake dependencies
+        uses: actions/cache@v3
+        with:
+          path: build/_deps
+          key: ${{ runner.os }}-cmake-deps-${{ hashFiles('**/CMakeLists.txt') }}
+
+      - name: Configure CMake
+        run: cmake -B build -S . ${{ matrix.cmake_args }} -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Nexa
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Run Tests (GTest)
+        working-directory: build
+        run: ctest -C Release --output-on-failure
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nexa-Build-${{ matrix.name }}
+          path: |
+            build/tests/nexa-test*
+            build/tests/Release/nexa-test*
+            build/nexa-cli*
+            build/Release/nexa-cli*
+          retention-days: 14

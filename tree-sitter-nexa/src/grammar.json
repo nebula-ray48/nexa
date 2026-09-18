@@ -895,47 +895,47 @@
       "members": [
         {
           "type": "STRING",
-          "value": "i8"
+          "value": "int8"
         },
         {
           "type": "STRING",
-          "value": "i16"
+          "value": "int16"
         },
         {
           "type": "STRING",
-          "value": "i32"
+          "value": "int32"
         },
         {
           "type": "STRING",
-          "value": "i64"
+          "value": "int64"
         },
         {
           "type": "STRING",
-          "value": "u8"
+          "value": "uint8"
         },
         {
           "type": "STRING",
-          "value": "u16"
+          "value": "uint16"
         },
         {
           "type": "STRING",
-          "value": "u32"
+          "value": "uint32"
         },
         {
           "type": "STRING",
-          "value": "u64"
+          "value": "uint64"
         },
         {
           "type": "STRING",
-          "value": "f32"
+          "value": "float32"
         },
         {
           "type": "STRING",
-          "value": "f64"
+          "value": "float64"
         },
         {
           "type": "STRING",
-          "value": "boolean"
+          "value": "bool"
         },
         {
           "type": "STRING",
