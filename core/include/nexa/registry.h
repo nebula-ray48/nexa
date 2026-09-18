@@ -46,6 +46,7 @@ private:
     StringID get_node_string_id(TSNode node);
     void analyze_function(TSNode func_node);
     void analyze_block(TSNode block_node, FunctionInfo& current_func);
+    void analyze_parameters(TSNode params_node, FunctionInfo& current_func);
 };
 
 }  // namespace nexa

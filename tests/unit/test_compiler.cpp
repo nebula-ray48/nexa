@@ -83,8 +83,9 @@ TEST(AnalyzerTest, ParseFunctionAndForEach) {
     // パーサーのセットアップ
     TSParser* parser = ts_parser_new();
     ts_parser_set_language(parser, tree_sitter_nexa());
-    TSTree* tree = ts_parser_parse_string(parser, nullptr, source, strlen(source));
+    TSTree* tree = ts_parser_parse_string(parser, nullptr, source, static_cast<uint32_t>(strlen(source)));
     TSNode root_node = ts_tree_root_node(tree);
+
 
     // 1. ルート直下の最初のノードが `function_declaration` であることを確認
     TSNode func_node = ts_node_named_child(root_node, 0);
@@ -147,9 +148,13 @@ TEST(AnalyzerTest, ExtractFunctionAndForEach) {
     TSTree* tree = ts_parser_parse_string(parser, nullptr, source, source_length);
     TSNode root_node = ts_tree_root_node(tree);
 
+    char* tree_str = ts_node_string(root_node);
+    std::cout << "\n==== AST DUMP ====\n" << tree_str << "\n==================\n" << std::endl;
+    free(tree_str);
+
     nexa::Analyzer analyzer(source, interner);
     analyzer.analyze_root(root_node);
-    
+
     const auto& functions = analyzer.get_functions();
 
     // 関数が1つだけ見つかっているか？
@@ -159,6 +164,11 @@ TEST(AnalyzerTest, ExtractFunctionAndForEach) {
     // 関数の名前が "update_monsters" になっているか？
     // IDを Interner に渡して文字列に戻して確認する
     EXPECT_EQ(interner.GetString(func.name_id), "update_monsters");
+
+    ASSERT_EQ(func.parameters.size(), 1);
+    const auto& param = func.parameters[0];
+    EXPECT_EQ(interner.GetString(param.name_id), "delta_time");
+    EXPECT_EQ(interner.GetString(param.type_id), "float32");
 
     // forEach ループが1つ見つかっているか？
     ASSERT_EQ(func.for_each_loops.size(), 1);

@@ -31,10 +31,20 @@ void Analyzer::analyze_function(TSNode func_node) {
     TSNode name_node = ts_node_child_by_field_name(func_node, "name", 4);
     info.name_id = get_node_string_id(name_node);
 
+    uint32_t child_count = ts_node_named_child_count(func_node);
+    for (uint32_t i = 0; i < child_count; ++i) {
+        TSNode child = ts_node_named_child(func_node, i);
+        if (ts_node_type(child) == std::string_view("parameter_list")) {
+            analyze_parameters(child, info);
+            break;
+        }
+    }
+
     TSNode body_node = ts_node_child_by_field_name(func_node, "body", 4);
     if (!ts_node_is_null(body_node)) {
-        analyze_block(body_node, info);
+        analyze_block(body_node, info); // これが呼ばれないと forEach が探せません
     }
+
     functions_.push_back(std::move(info));
 }
 
@@ -58,6 +68,26 @@ void Analyzer::analyze_block(TSNode block_node, FunctionInfo& current_func) {
                 loop_info.condition_node = TSNode{}; // 空の波括弧で安全にゼロ初期化
             }
             current_func.for_each_loops.push_back(std::move(loop_info));
+        }
+    }
+}
+
+void Analyzer::analyze_parameters(TSNode params_node, FunctionInfo& current_func) {
+    uint32_t count = ts_node_named_child_count(params_node);
+
+    for (uint32_t i = 0; i < count; ++i) {
+        TSNode param_node = ts_node_named_child(params_node, i);
+
+        if (ts_node_type(param_node) == std::string_view("parameter")) {
+            ParameterInfo param_info;
+
+            TSNode name_node = ts_node_child_by_field_name(param_node, "name", 4);
+            param_info.name_id = get_node_string_id(name_node);
+
+            TSNode type_node = ts_node_child_by_field_name(param_node, "type", 4);
+            param_info.type_id = get_node_string_id(type_node);
+
+            current_func.parameters.push_back(param_info);
         }
     }
 }
