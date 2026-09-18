@@ -42,7 +42,7 @@ void Analyzer::analyze_function(TSNode func_node) {
 
     TSNode body_node = ts_node_child_by_field_name(func_node, "body", 4);
     if (!ts_node_is_null(body_node)) {
-        analyze_block(body_node, info); // これが呼ばれないと forEach が探せません
+        analyze_block(body_node, info);
     }
 
     functions_.push_back(std::move(info));
