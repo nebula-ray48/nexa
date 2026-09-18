@@ -1,5 +1,7 @@
 set(PARSER_SRC ${CMAKE_SOURCE_DIR}/tree-sitter-nexa/src/parser.c
-        include/nexa/compiler.h)
+        include/nexa/compiler.h
+        include/nexa/registry.h
+        src/analyzer.cpp)
 
 add_library(nexa-core STATIC
     ${PARSER_SRC}

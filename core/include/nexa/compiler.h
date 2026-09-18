@@ -17,6 +17,14 @@ namespace nexa {
 
 using StringID = uint32_t;
 
+constexpr StringID kInvalidStringID = std::numeric_limits<StringID>::max(); // 0xFFFFFFFFU
+
+// 判定用のインライン関数
+constexpr bool is_valid(StringID id) noexcept {
+    return id != kInvalidStringID;
+}
+
+
 class StringInterner {
 private:
     std::deque<std::string> id_to_string;

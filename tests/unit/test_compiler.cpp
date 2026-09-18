@@ -1,5 +1,7 @@
-#include <gtest/gtest.h>
 #include "nexa/compiler.h"
+#include "nexa/registry.h"
+
+#include <gtest/gtest.h>
 
 using namespace nexa;
 
@@ -65,4 +67,112 @@ TEST(AnalyzerTest, ParseComponent) {
 
     EXPECT_EQ(interner.GetString(comp_reg.field_names[start + 1]), "y");
     EXPECT_EQ(interner.GetString(comp_reg.field_types[start + 1]), "float32");
+}
+
+TEST(AnalyzerTest, ParseFunctionAndForEach) {
+    // テスト用のNexaコード
+    // 関数宣言と、その中にある forEach 文を定義
+    const char* source = R"(
+        pub fun update_monsters(delta_time: float32) {
+            forEach Monster where is_active {
+                Position.x = 1.0;
+            }
+        }
+    )";
+
+    // パーサーのセットアップ
+    TSParser* parser = ts_parser_new();
+    ts_parser_set_language(parser, tree_sitter_nexa());
+    TSTree* tree = ts_parser_parse_string(parser, nullptr, source, strlen(source));
+    TSNode root_node = ts_tree_root_node(tree);
+
+    // 1. ルート直下の最初のノードが `function_declaration` であることを確認
+    TSNode func_node = ts_node_named_child(root_node, 0);
+    ASSERT_FALSE(ts_node_is_null(func_node));
+    EXPECT_STREQ(ts_node_type(func_node), "function_declaration");
+
+    // 2. 関数の名前 (`name` フィールド) が "update_monsters" であるか確認
+    TSNode func_name_node = ts_node_child_by_field_name(func_node, "name", 4);
+    ASSERT_FALSE(ts_node_is_null(func_name_node));
+    uint32_t name_start = ts_node_start_byte(func_name_node);
+    uint32_t name_end = ts_node_end_byte(func_name_node);
+    std::string func_name(source + name_start, name_end - name_start);
+    EXPECT_EQ(func_name, "update_monsters");
+
+    // 3. 関数のボディ (`block`) を取得
+    TSNode body_node = ts_node_child_by_field_name(func_node, "body", 4);
+    ASSERT_FALSE(ts_node_is_null(body_node));
+
+    // 4. ボディの中の最初の文が `forEach_statement` であることを確認
+    TSNode foreach_node = ts_node_named_child(body_node, 0);
+    ASSERT_FALSE(ts_node_is_null(foreach_node));
+    EXPECT_STREQ(ts_node_type(foreach_node), "forEach_statement");
+
+    // 5. forEach のターゲット (`target` フィールド) が "Monster" であるか確認
+    TSNode target_node = ts_node_child_by_field_name(foreach_node, "target", 6);
+    ASSERT_FALSE(ts_node_is_null(target_node));
+    uint32_t target_start = ts_node_start_byte(target_node);
+    uint32_t target_end = ts_node_end_byte(target_node);
+    std::string target_name(source + target_start, target_end - target_start);
+    EXPECT_EQ(target_name, "Monster");
+
+    // 6. forEach の条件 (`condition` フィールド) が "is_active" であるか確認
+    TSNode condition_node = ts_node_child_by_field_name(foreach_node, "condition", 9);
+    ASSERT_FALSE(ts_node_is_null(condition_node));
+    uint32_t cond_start = ts_node_start_byte(condition_node);
+    uint32_t cond_end = ts_node_end_byte(condition_node);
+    std::string cond_name(source + cond_start, cond_end - cond_start);
+    EXPECT_EQ(cond_name, "is_active");
+
+    ts_tree_delete(tree);
+    ts_parser_delete(parser);
+}
+
+TEST(AnalyzerTest, ExtractFunctionAndForEach) {
+    // テスト用のNexaコード
+    const char* source = R"(
+        pub fun update_monsters(delta_time: float32) {
+            forEach Monster where is_active {
+                Position.x = 1.0;
+            }
+        }
+    )";
+
+    // 1. パーサーと Interner の準備
+    nexa::StringInterner interner;
+    TSParser* parser = ts_parser_new();
+    ts_parser_set_language(parser, tree_sitter_nexa());
+
+    uint32_t source_length = static_cast<uint32_t>(strlen(source));
+    TSTree* tree = ts_parser_parse_string(parser, nullptr, source, source_length);
+    TSNode root_node = ts_tree_root_node(tree);
+
+    nexa::Analyzer analyzer(source, interner);
+    analyzer.analyze_root(root_node);
+    
+    const auto& functions = analyzer.get_functions();
+
+    // 関数が1つだけ見つかっているか？
+    ASSERT_EQ(functions.size(), 1);
+    const auto& func = functions[0];
+
+    // 関数の名前が "update_monsters" になっているか？
+    // IDを Interner に渡して文字列に戻して確認する
+    EXPECT_EQ(interner.GetString(func.name_id), "update_monsters");
+
+    // forEach ループが1つ見つかっているか？
+    ASSERT_EQ(func.for_each_loops.size(), 1);
+    const auto& loop = func.for_each_loops[0];
+
+    // ループの対象（ターゲット）が "Monster" か？
+    EXPECT_EQ(interner.GetString(loop.target_entity_id), "Monster");
+
+    // 条件（where）がちゃんと存在しているか？
+    EXPECT_TRUE(loop.has_condition());
+
+    // 条件の文字が "is_active" か？
+    EXPECT_EQ(interner.GetString(loop.condition_id), "is_active");
+
+    ts_tree_delete(tree);
+    ts_parser_delete(parser);
 }
