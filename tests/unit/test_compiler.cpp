@@ -1,5 +1,6 @@
 #include "nexa/analyzer.h"
 #include "nexa/registry.h"
+#include "nexa/type_system.h"
 
 #include <gtest/gtest.h>
 
@@ -303,4 +304,25 @@ TEST(AnalyzerTest, ExtractVariableDeclaration) {
 
     ts_tree_delete(tree);
     ts_parser_delete(parser);
+}
+
+TEST(TypeSystemTest, BuiltinTypeRegistration) {
+    nexa::StringInterner interner;
+    nexa::TypeRegistry type_registry(interner);
+
+    // float32 や bool という文字列をIDに変換してみる
+    nexa::StringID float32_id = interner.Intern("float32");
+    nexa::StringID bool_id = interner.Intern("bool");
+    nexa::StringID unknown_id = interner.Intern("Monster"); // 組み込み型ではない適当な名前
+
+    // TypeRegistryが正しくIDを保持し、組み込み型として判定できるか確認
+    EXPECT_TRUE(type_registry.is_builtin(float32_id));
+    EXPECT_TRUE(type_registry.is_builtin(bool_id));
+
+    // ユーザー定義の型は組み込み型ではないと判定されるか確認
+    EXPECT_FALSE(type_registry.is_builtin(unknown_id));
+
+    // ゲッター経由で取得したIDが一致するか確認
+    EXPECT_EQ(type_registry.get_float32(), float32_id);
+    EXPECT_EQ(type_registry.get_bool(), bool_id);
 }
