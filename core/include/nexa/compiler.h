@@ -41,7 +41,7 @@ public:
         return new_id;
     }
 
-    std::string_view GetString(StringID id) const {
+    [[nodiscard]] std::string_view GetString(StringID id) const {
         if (id < id_to_string.size()) {
             return id_to_string[id];
         }
