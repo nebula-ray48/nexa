@@ -1,4 +1,5 @@
 #include "nexa/registry.h"
+#include "nexa/analyzer.h"
 
 namespace nexa {
 
@@ -50,6 +51,7 @@ void Analyzer::analyze_function(TSNode func_node) {
 
 void Analyzer::analyze_block(TSNode block_node, FunctionInfo& current_func) {
     uint32_t count = ts_node_named_child_count(block_node);
+
     for (uint32_t i = 0; i < count; ++i) {
         TSNode statement = ts_node_named_child(block_node, i);
         std::string_view type = ts_node_type(statement);
@@ -68,7 +70,47 @@ void Analyzer::analyze_block(TSNode block_node, FunctionInfo& current_func) {
                 loop_info.condition_node = TSNode{}; // 空の波括弧で安全にゼロ初期化
             }
             current_func.for_each_loops.push_back(std::move(loop_info));
+        } else if (type == "if_statement") {
+            analyze_if(statement, current_func);
+        } else if (type == "while_statement") {
+            analyze_while(statement, current_func);
         }
+    }
+}
+
+void Analyzer::analyze_if(TSNode if_node, FunctionInfo& current_func) {
+    IfInfo if_info;
+
+    TSNode condition_node = ts_node_child_by_field_name(if_node, "condition", 9);
+    if (!ts_node_is_null(condition_node)) {
+        if_info.condition_id = get_node_string_id(condition_node);
+    } else {
+        if_info.condition_id = kInvalidStringID;
+    }
+
+    current_func.if_statements.push_back(std::move(if_info));
+
+    TSNode consequence_node = ts_node_child_by_field_name(if_node, "consequence", 11);
+    if (!ts_node_is_null(consequence_node)) {
+        analyze_block(consequence_node, current_func);
+    }
+}
+
+void Analyzer::analyze_while(TSNode while_node, FunctionInfo& current_func) {
+    WhileInfo info;
+
+    TSNode cond_node = ts_node_child_by_field_name(while_node, "condition", 9);
+    if (!ts_node_is_null(cond_node)) {
+        info.condition_id = get_node_string_id(cond_node);
+    } else {
+        info.condition_id = kInvalidStringID;
+    }
+
+    current_func.while_loops.push_back(std::move(info));
+
+    TSNode body_node = ts_node_child_by_field_name(while_node, "body", 4);
+    if (!ts_node_is_null(body_node)) {
+        analyze_block(body_node, current_func);
     }
 }
 

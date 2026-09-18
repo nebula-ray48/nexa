@@ -57,9 +57,10 @@ module.exports = grammar({
 
     _statement: $ => choice(
       $.forEach_statement,
-      $.if_statement,
-      $.return_statement,
-      $.expression_statement
+        $.if_statement,
+        $.while_statement,
+        $.return_statement,
+        $.expression_statement
     ),
 
     forEach_statement: $ => seq(
@@ -69,6 +70,11 @@ module.exports = grammar({
     ),
 
     if_statement: $ => seq('if', field('condition', $._expression), field('consequence', $.block)),
+
+      while_statement: $ => seq(
+          'while', field('condition', $._expression),
+          field('body', $.block)
+      ),
 
     return_statement: $ => seq('return', optional($._expression), ';'),
 

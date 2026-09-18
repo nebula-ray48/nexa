@@ -1,4 +1,4 @@
-#include "nexa/compiler.h"
+#include "nexa/analyzer.h"
 #include "nexa/registry.h"
 
 #include <gtest/gtest.h>
@@ -182,6 +182,80 @@ TEST(AnalyzerTest, ExtractFunctionAndForEach) {
 
     // 条件の文字が "is_active" か？
     EXPECT_EQ(interner.GetString(loop.condition_id), "is_active");
+
+    ts_tree_delete(tree);
+    ts_parser_delete(parser);
+}
+
+TEST(AnalyzerTest, ExtractIfStatement) {
+    const char* source = R"(
+        fun check_status(is_alive: bool) {
+            if is_alive {
+                forEach Monster where is_active {
+                    Position.x = 1.0;
+                }
+            }
+        }
+    )";
+
+    nexa::StringInterner interner;
+    TSParser* parser = ts_parser_new();
+    ts_parser_set_language(parser, tree_sitter_nexa());
+
+    TSTree* tree = ts_parser_parse_string(parser, nullptr, source, static_cast<uint32_t>(strlen(source)));
+    TSNode root_node = ts_tree_root_node(tree);
+
+    nexa::Analyzer analyzer(source, interner);
+    analyzer.analyze_root(root_node);
+
+    const auto& functions = analyzer.get_functions();
+    ASSERT_EQ(functions.size(), 1);
+    const auto& func = functions[0];
+
+    // if文が抽出できているか
+    ASSERT_EQ(func.if_statements.size(), 1);
+    EXPECT_EQ(interner.GetString(func.if_statements[0].condition_id), "is_alive");
+
+    // ifブロック内のforEachも再帰的に拾えているか
+    ASSERT_EQ(func.for_each_loops.size(), 1);
+    EXPECT_EQ(interner.GetString(func.for_each_loops[0].target_entity_id), "Monster");
+
+    ts_tree_delete(tree);
+    ts_parser_delete(parser);
+}
+
+TEST(AnalyzerTest, ExtractWhileStatement) {
+    const char* source = R"(
+        pub fun wait_for_ready() {
+            while is_waiting {
+                if ready_flag {
+                    is_waiting = 0;
+                }
+            }
+        }
+    )";
+
+    nexa::StringInterner interner;
+    TSParser* parser = ts_parser_new();
+    ts_parser_set_language(parser, tree_sitter_nexa());
+
+    TSTree* tree = ts_parser_parse_string(parser, nullptr, source, static_cast<uint32_t>(strlen(source)));
+    TSNode root_node = ts_tree_root_node(tree);
+
+    nexa::Analyzer analyzer(source, interner);
+    analyzer.analyze_root(root_node);
+
+    const auto& functions = analyzer.get_functions();
+    ASSERT_EQ(functions.size(), 1);
+    const auto& func = functions[0];
+
+    // whileループが抽出できているか
+    ASSERT_EQ(func.while_loops.size(), 1);
+    EXPECT_EQ(interner.GetString(func.while_loops[0].condition_id), "is_waiting");
+
+    // whileの中のif文も再帰的に拾えているか
+    ASSERT_EQ(func.if_statements.size(), 1);
+    EXPECT_EQ(interner.GetString(func.if_statements[0].condition_id), "ready_flag");
 
     ts_tree_delete(tree);
     ts_parser_delete(parser);
