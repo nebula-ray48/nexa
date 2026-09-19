@@ -68,8 +68,7 @@ private:
 
     StringID type_bool_;
     StringID type_string_;
-
-    // std::arrayを使うとさらにメモリ効率が良くなりますが、今回はシンプルにvectorで
+    
     std::array<StringID, 12> builtin_type_ids_;
 };
 

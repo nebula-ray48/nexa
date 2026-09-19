@@ -1,5 +1,6 @@
 #include "nexa/analyzer.h"
 #include "nexa/registry.h"
+#include "nexa/symbol_table.h"
 #include "nexa/type_system.h"
 
 #include <gtest/gtest.h>
@@ -325,4 +326,63 @@ TEST(TypeSystemTest, BuiltinTypeRegistration) {
     // ゲッター経由で取得したIDが一致するか確認
     EXPECT_EQ(type_registry.get_float32(), float32_id);
     EXPECT_EQ(type_registry.get_bool(), bool_id);
+}
+
+TEST(SymbolTableTest, BasicDeclarationAndLookup) {
+    nexa::StringInterner interner;
+    nexa::SymbolTable table;
+
+    nexa::StringID var_x = interner.Intern("x");
+    nexa::StringID type_i32 = interner.Intern("int32");
+
+    // 未定義の変数は検索失敗する
+    EXPECT_EQ(table.lookup(var_x), nexa::kInvalidStringID);
+
+    // 変数登録と検索
+    EXPECT_TRUE(table.declare(var_x, type_i32, /*is_mutable=*/false));
+    EXPECT_EQ(table.lookup(var_x), type_i32);
+
+    // 同一スコープでの同名定義は弾かれる
+    EXPECT_FALSE(table.declare(var_x, type_i32, /*is_mutable=*/true));
+}
+
+TEST(SymbolTableTest, ScopeNestingAndShadowing) {
+    nexa::StringInterner interner;
+    nexa::SymbolTable table;
+
+    nexa::StringID var_x = interner.Intern("x");
+    nexa::StringID var_y = interner.Intern("y");
+    nexa::StringID type_i32 = interner.Intern("int32");
+    nexa::StringID type_f32 = interner.Intern("float32");
+
+    // グローバル / 最外周スコープ
+    EXPECT_TRUE(table.declare(var_x, type_i32, false));
+
+    // 内側スコープへ突入
+    table.enter_scope();
+    {
+        EXPECT_TRUE(table.declare(var_y, type_f32, true));
+        // 外側の変数は内側からも見える
+        EXPECT_EQ(table.lookup(var_x), type_i32);
+        EXPECT_EQ(table.lookup(var_y), type_f32);
+
+        // 別スコープであれば同名変数を定義可能（シャドウイング）
+        EXPECT_TRUE(table.declare(var_x, type_f32, false));
+        // 内側では新しい型（float32）で解決される
+        EXPECT_EQ(table.lookup(var_x), type_f32);
+    }
+    // 内側スコープを脱出
+    table.exit_scope();
+
+    // 脱出後は外側の型（int32）に復帰している
+    EXPECT_EQ(table.lookup(var_x), type_i32);
+    // 内側で定義された y は消滅している
+    EXPECT_EQ(table.lookup(var_y), nexa::kInvalidStringID);
+}
+
+TEST(SymbolTableTest, RedundantExitScopeSafety) {
+    nexa::SymbolTable table;
+
+    // スコープが空の状態で exit_scope を呼んでもクラッシュしない
+    EXPECT_NO_THROW(table.exit_scope());
 }
