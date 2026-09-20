@@ -2,6 +2,7 @@
 #include "nexa/registry.h"
 #include "nexa/symbol_table.h"
 #include "nexa/type_system.h"
+#include "nexa/type_checker.h"
 
 #include <gtest/gtest.h>
 
@@ -385,4 +386,83 @@ TEST(SymbolTableTest, RedundantExitScopeSafety) {
 
     // スコープが空の状態で exit_scope を呼んでもクラッシュしない
     EXPECT_NO_THROW(table.exit_scope());
+}
+
+#include "nexa/type_checker.h"
+
+// 1. 正常な関数のテスト（正しい戻り値と引数）
+TEST(TypeCheckerTest, ValidFunctionSignature) {
+    nexa::StringInterner interner;
+    nexa::TypeRegistry registry(interner);
+
+    // 手動で正しい関数のデータを作る
+    nexa::FunctionInfo func;
+    func.name_id = interner.Intern("valid_func");
+    func.return_type_id = registry.get_int32(); // 組み込み型 int32
+
+    nexa::ParameterInfo p1;
+    p1.name_id = interner.Intern("x");
+    p1.type_id = registry.get_float32(); // 組み込み型 float32
+    func.parameters.push_back(p1);
+
+    std::vector<nexa::FunctionInfo> funcs = { func };
+    nexa::TypeChecker checker(funcs, registry, interner);
+
+    // エラーがなく、true が返るはず
+    EXPECT_TRUE(checker.check_all());
+    EXPECT_TRUE(checker.get_errors().empty());
+}
+
+// 2. 未定義の戻り値のテスト
+TEST(TypeCheckerTest, InvalidReturnType) {
+    nexa::StringInterner interner;
+    nexa::TypeRegistry registry(interner);
+
+    nexa::FunctionInfo func;
+    func.name_id = interner.Intern("bad_return");
+    func.return_type_id = interner.Intern("UnknownType"); // 存在しない型
+
+    std::vector<nexa::FunctionInfo> funcs = { func };
+    nexa::TypeChecker checker(funcs, registry, interner);
+
+    // エラーが発生し、false が返るはず
+    EXPECT_FALSE(checker.check_all());
+    ASSERT_EQ(checker.get_errors().size(), 1);
+
+    // メッセージに "Unknown return type" が含まれているか確認
+    EXPECT_NE(checker.get_errors()[0].message.find("Unknown return type"), std::string::npos);
+    // 先ほど追加した interner_ のおかげで関数名が含まれているかも確認
+    EXPECT_NE(checker.get_errors()[0].message.find("bad_return"), std::string::npos);
+}
+
+// 3. 未定義の引数 ＆ 引数の名前被りテスト
+TEST(TypeCheckerTest, InvalidAndDuplicateParameters) {
+    nexa::StringInterner interner;
+    nexa::TypeRegistry registry(interner);
+
+    nexa::FunctionInfo func;
+    func.name_id = interner.Intern("bad_params");
+    func.return_type_id = registry.get_int32();
+
+    // 1つ目の引数: 型が存在しない
+    nexa::ParameterInfo p1;
+    p1.name_id = interner.Intern("x");
+    p1.type_id = interner.Intern("UnknownParamType");
+
+    // 2つ目の引数: 型は正しいが、名前 'x' が1つ目と被っている
+    nexa::ParameterInfo p2;
+    p2.name_id = interner.Intern("x");
+    p2.type_id = registry.get_int32();
+
+    func.parameters.push_back(p1);
+    func.parameters.push_back(p2);
+
+    std::vector<nexa::FunctionInfo> funcs = { func };
+    nexa::TypeChecker checker(funcs, registry, interner);
+
+    EXPECT_FALSE(checker.check_all());
+    // エラーが2つ（型不明 ＋ 名前被り）出ているはず
+    ASSERT_EQ(checker.get_errors().size(), 2);
+    EXPECT_NE(checker.get_errors()[0].message.find("Unknown parameter type"), std::string::npos);
+    EXPECT_NE(checker.get_errors()[1].message.find("Duplicate parameter name"), std::string::npos);
 }

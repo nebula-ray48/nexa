@@ -5,7 +5,9 @@ set(PARSER_SRC ${CMAKE_SOURCE_DIR}/tree-sitter-nexa/src/parser.c
         include/nexa/analyzer.h
         include/nexa/type_system.h
         include/nexa/symbol_table.h
-        src/symbol_table.cpp)
+        src/symbol_table.cpp
+        include/nexa/type_checker.h
+        src/type_checker.cpp)
 
 add_library(nexa-core STATIC
     ${PARSER_SRC}
