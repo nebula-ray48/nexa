@@ -43,6 +43,21 @@ private:
 
     // エラーを追加するユーティリティ関数
     void report_error(StringID func_id, std::string_view message);
+
+    // ブロック（文の集まり）を処理する
+    void check_block(const std::vector<ParameterInfo>& statements);
+
+    // 変数宣言の配列を一括チェック
+    void check_variables(StringID func_name, const std::vector<VariableInfo>& variables);
+
+    // ForEachループの配列を一括チェック
+    void check_for_each_loops(StringID func_name, const std::vector<ForEachInfo>& loops);
+
+    // If文の配列を一括チェック
+    void check_if_statements(StringID func_name, const std::vector<IfInfo>& if_stmts);
+
+    // Whileループの配列を一括チェック
+    void check_while_loops(StringID func_name, const std::vector<WhileInfo>& while_loops);
 };
 
 } // namespace nexa

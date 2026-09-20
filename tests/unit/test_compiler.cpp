@@ -466,3 +466,127 @@ TEST(TypeCheckerTest, InvalidAndDuplicateParameters) {
     EXPECT_NE(checker.get_errors()[0].message.find("Unknown parameter type"), std::string::npos);
     EXPECT_NE(checker.get_errors()[1].message.find("Duplicate parameter name"), std::string::npos);
 }
+
+// 4. 関数内のローカル変数宣言のテスト
+TEST(TypeCheckerTest, VariableDeclarations) {
+    nexa::StringInterner interner;
+    nexa::TypeRegistry registry(interner);
+
+    nexa::FunctionInfo func;
+    func.name_id = interner.Intern("test_vars");
+    func.return_type_id = registry.get_int32();
+
+    // 変数1: 正しい型 (float32)
+    nexa::VariableInfo v1;
+    v1.name_id = interner.Intern("health");
+    v1.type_id = registry.get_float32();
+    v1.is_mutable = true;
+
+    // 変数2: 存在しない型
+    nexa::VariableInfo v2;
+    v2.name_id = interner.Intern("magic");
+    v2.type_id = interner.Intern("UnknownType");
+    v2.is_mutable = false;
+
+    // 変数3: 名前が変数1と被っている (health)
+    nexa::VariableInfo v3;
+    v3.name_id = interner.Intern("health");
+    v3.type_id = registry.get_int32();
+    v3.is_mutable = false;
+
+    func.variables.push_back(v1);
+    func.variables.push_back(v2);
+    func.variables.push_back(v3);
+
+    std::vector<nexa::FunctionInfo> funcs = { func };
+    nexa::TypeChecker checker(funcs, registry, interner);
+
+    EXPECT_FALSE(checker.check_all());
+
+    // エラーは2つ（v2の型不明、v3の名前被り）出るはず
+    ASSERT_EQ(checker.get_errors().size(), 2);
+    EXPECT_NE(checker.get_errors()[0].message.find("Unknown variable type"), std::string::npos);
+    EXPECT_NE(checker.get_errors()[1].message.find("Duplicate variable name"), std::string::npos);
+}
+
+// 5. If文とWhile文の条件式テスト
+TEST(TypeCheckerTest, IfAndWhileConditions) {
+    nexa::StringInterner interner;
+    nexa::TypeRegistry registry(interner);
+
+    nexa::FunctionInfo func;
+    func.name_id = interner.Intern("test_conds");
+    func.return_type_id = registry.get_int32();
+
+    // スコープに bool 型の変数 "is_active" と int32 型の "count" を登録（今回は引数として）
+    nexa::ParameterInfo p1{ interner.Intern("is_active"), registry.get_bool() };
+    nexa::ParameterInfo p2{ interner.Intern("count"), registry.get_int32() };
+    func.parameters.push_back(p1);
+    func.parameters.push_back(p2);
+
+    // 1. If文: 条件が int32 型 (count) -> エラーになるはず
+    nexa::IfInfo if_bad{ interner.Intern("count") };
+    func.if_statements.push_back(if_bad);
+
+    // 2. While文: 条件が bool 型 (is_active) -> 正常
+    nexa::WhileInfo while_ok{ interner.Intern("is_active") };
+    func.while_loops.push_back(while_ok);
+
+    // 3. While文: 条件が存在しない変数 (unknown) -> エラーになるはず
+    nexa::WhileInfo while_bad{ interner.Intern("unknown") };
+    func.while_loops.push_back(while_bad);
+
+    std::vector<nexa::FunctionInfo> funcs = { func };
+    nexa::TypeChecker checker(funcs, registry, interner);
+
+    EXPECT_FALSE(checker.check_all());
+
+    // エラーは2つ（Ifの型違い、Whileの未定義変数）出るはず
+    ASSERT_EQ(checker.get_errors().size(), 2);
+    EXPECT_NE(checker.get_errors()[0].message.find("If condition must be bool"), std::string::npos);
+    EXPECT_NE(checker.get_errors()[1].message.find("Undefined variable in while condition"), std::string::npos);
+}
+
+// 6. ForEachループのテスト
+TEST(TypeCheckerTest, ForEachLoops) {
+    nexa::StringInterner interner;
+    nexa::TypeRegistry registry(interner);
+
+    nexa::StringID valid_entity_id = interner.Intern("string");
+
+    nexa::FunctionInfo func;
+    func.name_id = interner.Intern("test_foreach");
+    func.return_type_id = registry.get_int32();
+
+    // スコープに bool 型の "is_alive" と int32 型の "hp" を登録
+    func.parameters.push_back({ interner.Intern("is_alive"), registry.get_bool() });
+    func.parameters.push_back({ interner.Intern("hp"), registry.get_int32() });
+
+    // 1. 正常なForEach: 対象が存在し(string)、条件が bool (is_alive)
+    nexa::ForEachInfo loop_ok;
+    loop_ok.target_entity_id = valid_entity_id;
+    loop_ok.condition_id = interner.Intern("is_alive");
+    func.for_each_loops.push_back(loop_ok);
+
+    // 2. エラー: 存在しない対象エンティティ ("Ghost")
+    nexa::ForEachInfo loop_bad_target;
+    loop_bad_target.target_entity_id = interner.Intern("Ghost");
+    loop_bad_target.condition_id = nexa::kInvalidStringID; // 条件なし
+    func.for_each_loops.push_back(loop_bad_target);
+
+    // 3. エラー: 条件が bool ではない ("hp")
+    nexa::ForEachInfo loop_bad_cond;
+    loop_bad_cond.target_entity_id = valid_entity_id;
+    loop_bad_cond.condition_id = interner.Intern("hp");
+    func.for_each_loops.push_back(loop_bad_cond);
+
+    std::vector<nexa::FunctionInfo> funcs = { func };
+    nexa::TypeChecker checker(funcs, registry, interner);
+
+    EXPECT_FALSE(checker.check_all());
+
+    // エラーは2つ（存在しないエンティティ、条件の型違い）出るはず
+    ASSERT_EQ(checker.get_errors().size(), 2);
+    EXPECT_NE(checker.get_errors()[0].message.find("Unknown target entity in forEach"), std::string::npos);
+    EXPECT_NE(checker.get_errors()[1].message.find("forEach condition must be bool"), std::string::npos);
+}
